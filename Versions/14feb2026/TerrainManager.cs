@@ -16,44 +16,20 @@ public class TerrainManager : MonoBehaviour
     [HideInInspector]
     public TerrainElement[] terrainElements;
 
-    Dictionary<float, float> heightMapGridY = new Dictionary<float, float>();
+
+    private const float baseHeight = 2.75f;
+    private const float step = 0.25f;
+
 
     void Start()
     {
         instance = this;
 
-        CreateMapF();
-        CreateMapI();
+        coordsF = CreateMap(3.00f);
+        coordsI = CreateMap(0);
+
         CreateTerrainElements();
-
-        heightMapGridY.Add(2.75f, -1);
-        heightMapGridY.Add(3.0f, 0);
-        heightMapGridY.Add(3.25f, 1);
-        heightMapGridY.Add(3.5f, 2);
-        heightMapGridY.Add(3.75f, 3);
-        heightMapGridY.Add(4.0f, 4);
-        heightMapGridY.Add(4.25f, 5);
-        heightMapGridY.Add(4.5f, 6);
-        heightMapGridY.Add(4.75f, 7);
-        heightMapGridY.Add(5.0f, 8);
-        heightMapGridY.Add(5.25f, 9);
-        heightMapGridY.Add(5.5f, 10);
     }
-
-
-
-
-
-
-
-    //int GetIndex(int x, int z)
-    //{
-    //    return z * (terrainWidth + 1) + x;
-    //}
-    //coordsI[GetIndex(x, z)]
-
-
-
 
 
 
@@ -76,7 +52,7 @@ public class TerrainManager : MonoBehaviour
             int cz = (int)current.z;
             float currentHeight = current.y;
 
-            // 4 smeroví susedia (kríž – NIE diagonály!)
+            // 4 smerovÃ­ susedia (krÃ­Å¾ â€“ NIE diagonÃ¡ly!)
             Vector2Int[] directions =
             {
             new Vector2Int( 1, 0),
@@ -131,23 +107,15 @@ public class TerrainManager : MonoBehaviour
             {
                 if (coordsF[i].x == snapX && coordsF[i].y == snapY && coordsF[i].z == snapZ)
                 {
-                    if (levelUp == true)
-                    {
-                        coordsF[i].y = coordsF[i].y + 0.25f;
-                    }
-                    else
-                    {
-                        coordsF[i].y = coordsF[i].y - 0.25f;
-                    }
+                    coordsF[i].y += levelUp ? 0.25f : -0.25f;
+
                     coordClick = i;
                 }
             }
         }
 
         ConvertCoordsFI(true);
-
         TerrainCollapse(coordClick);
-
         ConvertCoordsFI(false);
 
         UpdateRegion(coordClick);
@@ -157,89 +125,46 @@ public class TerrainManager : MonoBehaviour
 
 
 
-
-
-
-
-    private void CreateMapF()
+    private Vector3[] CreateMap(float initialHeight)
     {
-        coordsF = new Vector3[(terrainWidth + 1) * (terrainWidth + 1)];
+        int size = (terrainWidth + 1) * (terrainWidth + 1);
+        Vector3[] map = new Vector3[size];
 
-        for (int i = 0, z = 0; z <= terrainWidth; z++)
+        int i = 0;
+        for (int z = 0; z <= terrainWidth; z++)
         {
-            for (int x = 0; x <= terrainWidth; x++, i++)
+            for (int x = 0; x <= terrainWidth; x++)
             {
-                float y = 3.0f;
-                coordsF[i] = new Vector3(x, y, z);
+                map[i++] = new Vector3(x, initialHeight, z);
             }
         }
-    }
 
-
-    private void CreateMapI()
-    {
-        coordsI = new Vector3[(terrainWidth + 1) * (terrainWidth + 1)];
-
-        for (int i = 0, z = 0; z <= terrainWidth; z++)
-        {
-            for (int x = 0; x <= terrainWidth; x++, i++)
-            {
-                float y = 3.0f;
-                coordsI[i] = new Vector3(x, y, z);
-            }
-        }
+        return map;
     }
 
 
 
 
-
-
-    public void ConvertCoordsFI(bool coordsFI)
+    public void ConvertCoordsFI(bool floatToInt)
     {
-        if (coordsFI)
+        for (int i = 0; i < coordsF.Length; i++)
         {
-            for (int Ci = 0, Cz = 0; Cz <= terrainWidth; Cz++)
+            if (floatToInt)
             {
-                for (int Cx = 0; Cx <= terrainWidth; Cx++, Ci++)
-                {
-                    coordsI[Ci].x = coordsF[Ci].x;
-                    coordsI[Ci].z = coordsF[Ci].z;
+                coordsI[i].x = coordsF[i].x;
+                coordsI[i].z = coordsF[i].z;
 
-                    foreach (var dictHeightMap in heightMapGridY)
-                    {
-                        if (coordsF[Ci].y == dictHeightMap.Key)
-                        {
-                            coordsI[Ci].y = dictHeightMap.Value;
-                        }
-                    }
-                }
+                coordsI[i].y = Mathf.RoundToInt((coordsF[i].y - baseHeight) / step);
             }
-        }
-        else
-        {
-            for (int Ci = 0, Cz = 0; Cz <= terrainWidth; Cz++)
+            else
             {
-                for (int Cx = 0; Cx <= terrainWidth; Cx++, Ci++)
-                {
-                    coordsF[Ci].x = coordsI[Ci].x;
-                    coordsF[Ci].z = coordsI[Ci].z;
+                coordsF[i].x = coordsI[i].x;
+                coordsF[i].z = coordsI[i].z;
 
-                    foreach (var dictHeightMap in heightMapGridY)
-                    {
-                        if (coordsI[Ci].y == dictHeightMap.Value)
-                        {
-                            coordsF[Ci].y = dictHeightMap.Key;
-                        }
-                    }
-                }
+                coordsF[i].y = baseHeight + coordsI[i].y * step;
             }
         }
     }
-
-
-
-
 
 
 
@@ -295,11 +220,5 @@ public class TerrainManager : MonoBehaviour
             terrainElements[i].Rebuild();
         }
     }
-
-
-
-
-
-
 
 }
