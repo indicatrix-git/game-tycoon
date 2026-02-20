@@ -1,5 +1,5 @@
-Game Log: Indicatrix
---------------------
+Game Log: Indicatrix - Tyconology
+---------------------------------
 
 :: 04 februar 2026
 - optimalizacia terenu II.
